@@ -37,6 +37,10 @@
   canvas { width: 100%; height: 220px; display: block; }
   .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: .78rem; color: var(--muted); }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; background: var(--c); vertical-align: -1px; }
+  .disclaimer { background: #fff7e0; color: #5c4400; border: 1px solid #f0d78a; border-left: 5px solid #d9a400; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: .86rem; line-height: 1.55; }
+  @media (prefers-color-scheme: dark) { .disclaimer { background: #2b2410; color: #f1dca0; border-color: #5a4a1a; border-left-color: #d9a400; } }
+  .disclaimer b { font-weight: 700; }
+  .disclaimer .ttl { display: block; margin-bottom: 4px; }
   .err { background: #fdecea; color: #8a1f17; border: 1px solid #f5c2bd; border-radius: 10px; padding: 12px; margin-bottom: 14px; display: none; font-size: .9rem; }
   footer { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 20px; line-height: 1.6; }
 </style>
@@ -50,6 +54,14 @@
     </div>
     <button id="refresh">↻ Perbarui</button>
   </header>
+
+  <div class="disclaimer" role="note">
+    <b class="ttl">Penting: baca sebelum menggunakan</b>
+    Situs ini adalah <b>proyek pribadi independen</b> dan <b>tidak berafiliasi, disponsori, atau disahkan</b> oleh lembaga, instansi, maupun institusi pendidikan mana pun.
+    Angka yang tampil adalah <b>data perkiraan model komputer (CAMS via Open-Meteo)</b>, bukan hasil pengukuran sensor atau stasiun pemantau resmi, dan memakai skala US AQI, bukan ISPU.
+    Hasilnya bisa berbeda dari kondisi sebenarnya di lokasi Anda. Jangan dijadikan satu-satunya dasar keputusan kesehatan, keselamatan, atau kebijakan.
+    Untuk informasi resmi, rujuk data ISPU dari Kementerian Lingkungan Hidup/BMKG atau instansi berwenang.
+  </div>
 
   <div class="err" id="err"></div>
 
@@ -79,6 +91,7 @@
   <footer>
     Data: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo Air Quality API</a>
     (model CAMS) untuk koordinat Banda Aceh. Data bersifat model/perkiraan, bukan hasil stasiun pemantau resmi.<br>
+    Proyek pribadi independen, tidak berafiliasi dengan lembaga atau institusi mana pun. Disediakan apa adanya tanpa jaminan akurasi atau ketersediaan.<br>
     Pembaruan otomatis setiap 10 menit.
   </footer>
 </div>
