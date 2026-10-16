@@ -41,6 +41,20 @@
   @media (prefers-color-scheme: dark) { .disclaimer { background: #2b2410; color: #f1dca0; border-color: #5a4a1a; border-left-color: #d9a400; } }
   .disclaimer b { font-weight: 700; }
   .disclaimer .ttl { display: block; margin-bottom: 4px; }
+  .pm-head { display: flex; align-items: stretch; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .pm-main { flex: 1; min-width: 220px; }
+  .pm-label { font-size: .82rem; color: var(--muted); }
+  .pm-val { font-size: 3.4rem; font-weight: 700; line-height: 1.05; margin-top: 4px; }
+  .pm-val small { font-size: 1rem; font-weight: 400; color: var(--muted); margin-left: 6px; }
+  .pm-sub { font-size: .88rem; color: var(--muted); margin-top: 6px; }
+  .pm-sub b { color: var(--text); }
+  .scales { display: flex; gap: 10px; flex-wrap: wrap; }
+  .scale { min-width: 140px; border-radius: 12px; padding: 12px 14px; background: #9aa5b1; color: #fff; transition: background .4s; }
+  .scale-name { font-size: .74rem; opacity: .9; }
+  .scale-num { font-size: 2rem; font-weight: 700; line-height: 1.15; }
+  .scale-cat { font-size: .82rem; font-weight: 600; line-height: 1.3; }
+  .advice { margin: 14px 0 0; font-size: .92rem; line-height: 1.5; }
+  .scale-note { margin: 8px 0 0; font-size: .76rem; color: var(--muted); line-height: 1.55; }
   .wind { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
   .compass { width: 130px; height: 130px; flex-shrink: 0; }
   .compass .ring { fill: none; stroke: var(--border); stroke-width: 2; }
@@ -81,23 +95,38 @@
   <div class="disclaimer" role="note">
     <b class="ttl">Penting: baca sebelum menggunakan</b>
     Situs ini adalah <b>proyek pribadi independen</b> dan <b>tidak berafiliasi, disponsori, atau disahkan</b> oleh lembaga, instansi, maupun institusi pendidikan mana pun.
-    Angka yang tampil adalah <b>data perkiraan model komputer (CAMS via Open-Meteo)</b>, bukan hasil pengukuran sensor atau stasiun pemantau resmi, dan memakai skala US AQI, bukan ISPU.
+    Angka yang tampil adalah <b>data perkiraan model komputer (CAMS via Open-Meteo)</b>, bukan hasil pengukuran sensor atau stasiun pemantau resmi. Angka US AQI memakai skala Amerika Serikat, dan &ldquo;Perkiraan ISPU&rdquo; dihitung sendiri dari PM2.5 model, bukan ISPU resmi pemerintah.
     Hasilnya bisa berbeda dari kondisi sebenarnya di lokasi Anda. Jangan dijadikan satu-satunya dasar keputusan kesehatan, keselamatan, atau kebijakan.
     Untuk informasi resmi, rujuk data ISPU dari Kementerian Lingkungan Hidup/BMKG atau instansi berwenang.
   </div>
 
   <div class="err" id="err"></div>
 
-  <div class="card hero">
-    <div class="badge" id="badge" style="background:#9aa5b1">
-      <div class="num" id="aqi">–</div>
-      <div class="lbl">US AQI</div>
+  <div class="card">
+    <div class="pm-head">
+      <div class="pm-main">
+        <div class="pm-label">PM2.5 saat ini (perkiraan model)</div>
+        <div class="pm-val"><span id="pm25">–</span><small>µg/m³</small></div>
+        <div class="pm-sub">Rata-rata 24 jam terakhir: <b id="pm25avg">–</b> µg/m³</div>
+      </div>
+      <div class="scales">
+        <div class="scale" id="usBox">
+          <div class="scale-name">US AQI</div>
+          <div class="scale-num" id="aqi">–</div>
+          <div class="scale-cat" id="cat">–</div>
+        </div>
+        <div class="scale" id="ispuBox">
+          <div class="scale-name">Perkiraan ISPU</div>
+          <div class="scale-num" id="ispu">–</div>
+          <div class="scale-cat" id="ispuCat">–</div>
+        </div>
+      </div>
     </div>
-    <div class="hero-info">
-      <h2 id="cat">–</h2>
-      <p id="advice">Mengambil data dari API…</p>
-      <p style="margin-top:8px">European AQI: <b id="eaqi">–</b></p>
-    </div>
+    <p class="advice" id="advice">Mengambil data dari API…</p>
+    <p class="scale-note">
+      <b>Perkiraan ISPU</b> dihitung sendiri dari rata-rata PM2.5 24 jam terakhir memakai titik batas ISPU Indonesia. ISPU resmi pemerintah memakai rata-rata 24 jam dari beberapa polutan hasil pengukuran, sehingga angka di sini <b>bukan ISPU resmi</b>.
+      US AQI memakai skala Amerika Serikat dan dihitung Open-Meteo dari semua polutan. Keduanya tidak bisa dibandingkan langsung. European AQI: <b id="eaqi">–</b>.
+    </p>
   </div>
 
   <div class="card">
@@ -143,7 +172,7 @@
       <li><b>Model, bukan sensor.</b> BMKG mengukur langsung di lapangan dengan alat. Dashboard ini menampilkan perkiraan model atmosfer global (CAMS). Jika berbeda, pengukuran BMKG yang menjadi rujukan.</li>
       <li><b>Resolusi model kasar.</b> Satu kotak model sekitar 45 km dirata-rata, sehingga lonjakan lokal (asap pembakaran, debu jalan, lalu lintas padat) tidak tertangkap. Angka model cenderung lebih rendah di dekat sumber polusi.</li>
       <li><b>Lokasi berbeda.</b> Stasiun BMKG berada di Indrapuri, Aceh Besar, sekitar 25 km dari titik koordinat dashboard ini.</li>
-      <li><b>Skala berbeda.</b> Dashboard menampilkan US AQI, sedangkan BMKG menampilkan konsentrasi PM2.5 (µg/m³) dengan kategori ala Indonesia. Titik batas kategorinya tidak sama, jadi bandingkan PM2.5 dengan PM2.5.</li>
+      <li><b>Skala berbeda.</b> Dashboard menampilkan US AQI dan perkiraan ISPU yang dihitung sendiri dari PM2.5 model, sedangkan BMKG menampilkan konsentrasi PM2.5 (µg/m³) hasil pengukuran dengan kategorinya sendiri. Titik batas dan cara hitung tiap skala berbeda, jadi cara paling adil adalah membandingkan angka PM2.5 dengan PM2.5.</li>
       <li><b>Waktu pembaruan.</b> Model diperbarui beberapa kali sehari dan nilai &ldquo;saat ini&rdquo; adalah interpolasi per jam, sehingga kejadian mendadak bisa terlambat atau meleset waktunya.</li>
     </ol>
     <p class="short">Singkatnya: untuk angka resmi dan pengukuran aktual, rujuk BMKG. Dashboard ini hanya gambaran umum dari data model.</p>
@@ -169,7 +198,7 @@ const LAT = 5.5483, LON = 95.3238, TZ = "Asia/Jakarta";
 const URL_API = "https://air-quality-api.open-meteo.com/v1/air-quality"
   + `?latitude=${LAT}&longitude=${LON}&timezone=${encodeURIComponent(TZ)}`
   + "&current=us_aqi,european_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone"
-  + "&hourly=us_aqi&past_days=1&forecast_days=1";
+  + "&hourly=us_aqi,pm2_5&past_days=1&forecast_days=1";
 
 const LEVELS = [
   { max: 50,  name: "Baik",                 color: "#2e9e5b", advice: "Kualitas udara baik. Aman untuk beraktivitas di luar ruangan." },
@@ -195,14 +224,55 @@ const $ = id => document.getElementById(id);
 
 function showError(msg) { const e = $("err"); e.textContent = msg; e.style.display = msg ? "block" : "none"; }
 
-function renderCurrent(c) {
+// Kategori ISPU (Permen LHK P.14/2020): indeks 1-50 Baik, 51-100 Sedang, 101-200 Tidak sehat,
+// 201-300 Sangat tidak sehat, 301+ Berbahaya
+const ISPU_LEVELS = [
+  { max: 50,   name: "Baik",               color: "#2e9e5b" },
+  { max: 100,  name: "Sedang",             color: "#2b6fd1" },
+  { max: 200,  name: "Tidak sehat",        color: "#d9a400" },
+  { max: 300,  name: "Sangat tidak sehat", color: "#d83a34" },
+  { max: 9999, name: "Berbahaya",          color: "#2a2a2a" }
+];
+// [konsentrasi bawah, konsentrasi atas, indeks bawah, indeks atas] untuk PM2.5 (µg/m³, rata-rata 24 jam)
+const PM25_BP = [[0, 15.5, 0, 50], [15.5, 55.4, 50, 100], [55.4, 150.4, 100, 200], [150.4, 250.4, 200, 300], [250.4, 500, 300, 500]];
+function ispuFromPm25(x) {
+  for (const [xb, xa, ib, ia] of PM25_BP) {
+    if (x <= xa) return Math.round(((ia - ib) / (xa - xb)) * (x - xb) + ib);
+  }
+  return 500;
+}
+const textOn = color => color === "#d9a400" ? "#2a2000" : "#ffffff";
+function paintBox(id, color) { const el = $(id); el.style.background = color; el.style.color = textOn(color); }
+
+function hourMean(hourly, nowIso) {
+  const nowIdx = hourly.time.findIndex(t => t >= nowIso.slice(0, 13));
+  if (nowIdx < 0) return null;
+  const vals = hourly.pm2_5.slice(Math.max(0, nowIdx - 23), nowIdx + 1).filter(v => v != null);
+  return vals.length >= 12 ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+}
+
+function renderCurrent(c, hourly) {
   const a = Math.round(c.us_aqi);
   const L = level(a);
   $("aqi").textContent = a;
-  $("badge").style.background = L.color;
+  paintBox("usBox", L.color);
   $("cat").textContent = L.name;
   $("advice").textContent = L.advice;
   $("eaqi").textContent = c.european_aqi ?? "–";
+
+  $("pm25").textContent = c.pm2_5 == null ? "–" : c.pm2_5.toFixed(1);
+  const avg = hourMean(hourly, c.time);
+  $("pm25avg").textContent = avg == null ? "–" : avg.toFixed(1);
+  const basis = avg ?? c.pm2_5;
+  if (basis == null) {
+    $("ispu").textContent = "–"; $("ispuCat").textContent = "Data tidak tersedia";
+  } else {
+    const idx = ispuFromPm25(basis);
+    const IL = ISPU_LEVELS.find(l => idx <= l.max);
+    $("ispu").textContent = idx;
+    $("ispuCat").textContent = IL.name;
+    paintBox("ispuBox", IL.color);
+  }
 
   $("metrics").innerHTML = METRICS.map(m => {
     const v = c[m.key];
@@ -301,7 +371,7 @@ async function load() {
     const d = await res.json();
     lastData = d;
     showError("");
-    renderCurrent(d.current);
+    renderCurrent(d.current, d.hourly);
     renderChart(d.hourly, d.current.time);
   } catch (e) {
     showError("Gagal mengambil data: " + e.message + ". Periksa koneksi internet lalu klik Perbarui.");
