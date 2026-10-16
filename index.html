@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kualitas Udara Banda Aceh</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --text: #1d2733; --muted: #6b7785; --border: #e3e8ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #11161c; --card: #1a222b; --text: #e8edf2; --muted: #93a0ae; --border: #2a3541; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  h1 { font-size: 1.4rem; margin: 0; }
+  .sub { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  button { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: .85rem; }
+  button:hover { border-color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .hero { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .badge { width: 130px; height: 130px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; transition: background .4s; }
+  .badge .num { font-size: 2.8rem; font-weight: 700; line-height: 1; }
+  .badge .lbl { font-size: .75rem; opacity: .9; margin-top: 4px; }
+  .hero-info h2 { margin: 0 0 6px; font-size: 1.3rem; }
+  .hero-info p { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; max-width: 480px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .metric { border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .metric .name { font-size: .78rem; color: var(--muted); }
+  .metric .val { font-size: 1.35rem; font-weight: 600; margin-top: 4px; }
+  .metric .unit { font-size: .72rem; color: var(--muted); font-weight: 400; }
+  .metric .bar { height: 4px; border-radius: 2px; margin-top: 8px; background: var(--border); overflow: hidden; }
+  .metric .bar i { display: block; height: 100%; width: 0; transition: width .4s, background .4s; }
+  h3 { margin: 0 0 12px; font-size: 1rem; }
+  canvas { width: 100%; height: 220px; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: .78rem; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; background: var(--c); vertical-align: -1px; }
+  .err { background: #fdecea; color: #8a1f17; border: 1px solid #f5c2bd; border-radius: 10px; padding: 12px; margin-bottom: 14px; display: none; font-size: .9rem; }
+  footer { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 20px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Kualitas Udara Banda Aceh</h1>
+      <div class="sub" id="updated">Memuat data…</div>
+    </div>
+    <button id="refresh">↻ Perbarui</button>
+  </header>
+
+  <div class="err" id="err"></div>
+
+  <div class="card hero">
+    <div class="badge" id="badge" style="background:#9aa5b1">
+      <div class="num" id="aqi">–</div>
+      <div class="lbl">US AQI</div>
+    </div>
+    <div class="hero-info">
+      <h2 id="cat">–</h2>
+      <p id="advice">Mengambil data dari API…</p>
+      <p style="margin-top:8px">European AQI: <b id="eaqi">–</b></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Polutan saat ini</h3>
+    <div class="grid" id="metrics"></div>
+  </div>
+
+  <div class="card">
+    <h3>Tren US AQI (24 jam terakhir + 24 jam ke depan)</h3>
+    <canvas id="chart"></canvas>
+    <div class="legend" style="margin-top:10px" id="legend"></div>
+  </div>
+
+  <footer>
+    Data: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo Air Quality API</a>
+    (model CAMS) untuk koordinat Banda Aceh. Data bersifat model/perkiraan, bukan hasil stasiun pemantau resmi.<br>
+    Pembaruan otomatis setiap 10 menit.
+  </footer>
+</div>
+
+<script>
+const LAT = 5.5483, LON = 95.3238, TZ = "Asia/Jakarta";
+const URL_API = "https://air-quality-api.open-meteo.com/v1/air-quality"
+  + `?latitude=${LAT}&longitude=${LON}&timezone=${encodeURIComponent(TZ)}`
+  + "&current=us_aqi,european_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone"
+  + "&hourly=us_aqi&past_days=1&forecast_days=2";
+
+const LEVELS = [
+  { max: 50,  name: "Baik",                 color: "#2e9e5b", advice: "Kualitas udara baik. Aman untuk beraktivitas di luar ruangan." },
+  { max: 100, name: "Sedang",               color: "#d9a400", advice: "Dapat diterima. Kelompok yang sangat sensitif sebaiknya mengurangi aktivitas berat di luar." },
+  { max: 150, name: "Tidak sehat bagi kelompok sensitif", color: "#e8751a", advice: "Anak-anak, lansia, dan penderita gangguan pernapasan sebaiknya membatasi aktivitas di luar." },
+  { max: 200, name: "Tidak sehat",          color: "#d83a34", advice: "Semua orang mungkin mulai merasakan dampak. Kurangi aktivitas berat di luar ruangan, pertimbangkan masker." },
+  { max: 300, name: "Sangat tidak sehat",   color: "#8e3b9e", advice: "Hindari aktivitas di luar ruangan. Gunakan masker (N95/KN95) bila harus keluar." },
+  { max: 9999,name: "Berbahaya",            color: "#7a1f3d", advice: "Kondisi darurat. Tetap di dalam ruangan dan tutup ventilasi." }
+];
+const level = v => LEVELS.find(l => v <= l.max);
+
+// batas "tinggi" kira-kira (µg/m³) untuk bar indikator
+const METRICS = [
+  { key: "pm2_5",            name: "PM2.5",  unit: "µg/m³", cap: 75 },
+  { key: "pm10",             name: "PM10",   unit: "µg/m³", cap: 150 },
+  { key: "carbon_monoxide",  name: "CO",     unit: "µg/m³", cap: 10000 },
+  { key: "nitrogen_dioxide", name: "NO₂",    unit: "µg/m³", cap: 200 },
+  { key: "sulphur_dioxide",  name: "SO₂",    unit: "µg/m³", cap: 350 },
+  { key: "ozone",            name: "O₃",     unit: "µg/m³", cap: 180 }
+];
+
+const $ = id => document.getElementById(id);
+
+function showError(msg) { const e = $("err"); e.textContent = msg; e.style.display = msg ? "block" : "none"; }
+
+function renderCurrent(c) {
+  const a = Math.round(c.us_aqi);
+  const L = level(a);
+  $("aqi").textContent = a;
+  $("badge").style.background = L.color;
+  $("cat").textContent = L.name;
+  $("advice").textContent = L.advice;
+  $("eaqi").textContent = c.european_aqi ?? "–";
+
+  $("metrics").innerHTML = METRICS.map(m => {
+    const v = c[m.key];
+    const pct = Math.min(100, (v / m.cap) * 100);
+    const col = pct < 40 ? "#2e9e5b" : pct < 70 ? "#d9a400" : "#d83a34";
+    return `<div class="metric"><div class="name">${m.name}</div>
+      <div class="val">${v == null ? "–" : v.toFixed(1)} <span class="unit">${m.unit}</span></div>
+      <div class="bar"><i style="width:${pct}%;background:${col}"></i></div></div>`;
+  }).join("");
+
+  const t = new Date(c.time);
+  $("updated").textContent = "Data per " + t.toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short" }) + " WIB";
+}
+
+function renderChart(hourly, nowIso) {
+  const cv = $("chart"), dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
+
+  const nowIdx = hourly.time.findIndex(t => t >= nowIso.slice(0, 13));
+  const start = Math.max(0, nowIdx - 24), end = Math.min(hourly.time.length, nowIdx + 25);
+  const times = hourly.time.slice(start, end), vals = hourly.us_aqi.slice(start, end);
+  const pad = { l: 34, r: 10, t: 10, b: 24 };
+  const w = W - pad.l - pad.r, h = H - pad.t - pad.b;
+  const ymax = Math.max(100, Math.ceil(Math.max(...vals.filter(v => v != null)) / 50) * 50);
+  const x = i => pad.l + (i / (vals.length - 1)) * w;
+  const y = v => pad.t + h - (v / ymax) * h;
+  const css = getComputedStyle(document.documentElement);
+  const muted = css.getPropertyValue("--muted").trim(), border = css.getPropertyValue("--border").trim();
+
+  // zona warna latar
+  let prev = 0;
+  LEVELS.forEach(L => {
+    const top = Math.min(L.max, ymax);
+    if (prev < ymax) { ctx.fillStyle = L.color + "22"; ctx.fillRect(pad.l, y(top), w, y(prev) - y(top)); }
+    prev = L.max;
+  });
+
+  // grid & label sumbu y
+  ctx.font = "11px system-ui"; ctx.fillStyle = muted; ctx.strokeStyle = border; ctx.lineWidth = 1;
+  for (let v = 0; v <= ymax; v += 50) {
+    ctx.beginPath(); ctx.moveTo(pad.l, y(v)); ctx.lineTo(W - pad.r, y(v)); ctx.stroke();
+    ctx.textAlign = "right"; ctx.fillText(v, pad.l - 6, y(v) + 4);
+  }
+  // label sumbu x
+  ctx.textAlign = "center";
+  for (let i = 0; i < times.length; i += 6) ctx.fillText(times[i].slice(11, 16), x(i), H - 6);
+
+  // garis
+  ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 2; ctx.beginPath();
+  vals.forEach((v, i) => { if (v == null) return; i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v)); });
+  ctx.stroke();
+
+  // penanda "sekarang"
+  const ni = nowIdx - start;
+  if (ni >= 0 && ni < vals.length && vals[ni] != null) {
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = muted; ctx.beginPath();
+    ctx.moveTo(x(ni), pad.t); ctx.lineTo(x(ni), pad.t + h); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(x(ni), y(vals[ni]), 5, 0, 7); ctx.fill();
+    ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.fillText("sekarang", x(ni), pad.t + 10);
+  }
+}
+
+let lastData = null;
+async function load() {
+  $("refresh").disabled = true;
+  try {
+    const res = await fetch(URL_API, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const d = await res.json();
+    lastData = d;
+    showError("");
+    renderCurrent(d.current);
+    renderChart(d.hourly, d.current.time);
+  } catch (e) {
+    showError("Gagal mengambil data: " + e.message + ". Periksa koneksi internet lalu klik Perbarui.");
+    $("updated").textContent = "Gagal memuat data";
+  } finally {
+    $("refresh").disabled = false;
+  }
+}
+
+$("legend").innerHTML = LEVELS.map((l, i) =>
+  `<span style="--c:${l.color}">${i === 0 ? "0–50" : (LEVELS[i-1].max + 1) + (l.max < 9999 ? "–" + l.max : "+")} ${l.name}</span>`).join("");
+
+$("refresh").addEventListener("click", load);
+window.addEventListener("resize", () => lastData && renderChart(lastData.hourly, lastData.current.time));
+load();
+setInterval(load, 10 * 60 * 1000);
+</script>
+</body>
+</html>
