@@ -71,7 +71,7 @@
   </div>
 
   <div class="card">
-    <h3>Tren US AQI (24 jam terakhir + 24 jam ke depan)</h3>
+    <h3>Tren US AQI (24 jam terakhir)</h3>
     <canvas id="chart"></canvas>
     <div class="legend" style="margin-top:10px" id="legend"></div>
   </div>
@@ -88,7 +88,7 @@ const LAT = 5.5483, LON = 95.3238, TZ = "Asia/Jakarta";
 const URL_API = "https://air-quality-api.open-meteo.com/v1/air-quality"
   + `?latitude=${LAT}&longitude=${LON}&timezone=${encodeURIComponent(TZ)}`
   + "&current=us_aqi,european_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone"
-  + "&hourly=us_aqi&past_days=1&forecast_days=2";
+  + "&hourly=us_aqi&past_days=1&forecast_days=1";
 
 const LEVELS = [
   { max: 50,  name: "Baik",                 color: "#2e9e5b", advice: "Kualitas udara baik. Aman untuk beraktivitas di luar ruangan." },
@@ -143,7 +143,7 @@ function renderChart(hourly, nowIso) {
   const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, W, H);
 
   const nowIdx = hourly.time.findIndex(t => t >= nowIso.slice(0, 13));
-  const start = Math.max(0, nowIdx - 24), end = Math.min(hourly.time.length, nowIdx + 25);
+  const start = Math.max(0, nowIdx - 24), end = Math.min(hourly.time.length, nowIdx + 1);
   const times = hourly.time.slice(start, end), vals = hourly.us_aqi.slice(start, end);
   const pad = { l: 34, r: 10, t: 10, b: 24 };
   const w = W - pad.l - pad.r, h = H - pad.t - pad.b;
@@ -182,7 +182,7 @@ function renderChart(hourly, nowIso) {
     ctx.setLineDash([4, 4]); ctx.strokeStyle = muted; ctx.beginPath();
     ctx.moveTo(x(ni), pad.t); ctx.lineTo(x(ni), pad.t + h); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(x(ni), y(vals[ni]), 5, 0, 7); ctx.fill();
-    ctx.fillStyle = muted; ctx.textAlign = "center"; ctx.fillText("sekarang", x(ni), pad.t + 10);
+    ctx.fillStyle = muted; ctx.textAlign = ni >= vals.length - 1 ? "right" : "center"; ctx.fillText("sekarang", x(ni) - (ni >= vals.length - 1 ? 8 : 0), pad.t + 10);
   }
 }
 
