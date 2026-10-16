@@ -52,6 +52,11 @@
   .wind-stats .row { margin-top: 8px; font-size: .9rem; }
   .wind-stats .row span { color: var(--muted); }
   .wind-stats .hint { margin-top: 10px; font-size: .78rem; color: var(--muted); line-height: 1.5; }
+  .faq summary { cursor: pointer; font-weight: 600; font-size: 1rem; }
+  .faq ol { margin: 12px 0 0; padding-left: 20px; font-size: .88rem; line-height: 1.6; color: var(--muted); }
+  .faq li { margin-bottom: 6px; }
+  .faq li b { color: var(--text); }
+  .faq .short { margin-top: 10px; font-size: .84rem; color: var(--muted); line-height: 1.55; }
   .station { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .station .info { flex: 1; min-width: 240px; }
   .station h3 { margin-bottom: 6px; }
@@ -131,6 +136,18 @@
     </div>
     <a class="btn-link" href="https://www.bmkg.go.id/kualitas-udara/pm25/pm25_idp2" target="_blank" rel="noopener noreferrer">Lihat data di BMKG ↗</a>
   </div>
+
+  <details class="card faq" open>
+    <summary>Kenapa angkanya bisa berbeda dengan BMKG?</summary>
+    <ol>
+      <li><b>Model, bukan sensor.</b> BMKG mengukur langsung di lapangan dengan alat. Dashboard ini menampilkan perkiraan model atmosfer global (CAMS). Jika berbeda, pengukuran BMKG yang menjadi rujukan.</li>
+      <li><b>Resolusi model kasar.</b> Satu kotak model sekitar 45 km dirata-rata, sehingga lonjakan lokal (asap pembakaran, debu jalan, lalu lintas padat) tidak tertangkap. Angka model cenderung lebih rendah di dekat sumber polusi.</li>
+      <li><b>Lokasi berbeda.</b> Stasiun BMKG berada di Indrapuri, Aceh Besar, sekitar 25 km dari titik koordinat dashboard ini.</li>
+      <li><b>Skala berbeda.</b> Dashboard menampilkan US AQI, sedangkan BMKG menampilkan konsentrasi PM2.5 (µg/m³) dengan kategori ala Indonesia. Titik batas kategorinya tidak sama, jadi bandingkan PM2.5 dengan PM2.5.</li>
+      <li><b>Waktu pembaruan.</b> Model diperbarui beberapa kali sehari dan nilai &ldquo;saat ini&rdquo; adalah interpolasi per jam, sehingga kejadian mendadak bisa terlambat atau meleset waktunya.</li>
+    </ol>
+    <p class="short">Singkatnya: untuk angka resmi dan pengukuran aktual, rujuk BMKG. Dashboard ini hanya gambaran umum dari data model.</p>
+  </details>
 
   <div class="card">
     <h3>Tren US AQI (24 jam terakhir)</h3>
