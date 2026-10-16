@@ -41,6 +41,24 @@
   @media (prefers-color-scheme: dark) { .disclaimer { background: #2b2410; color: #f1dca0; border-color: #5a4a1a; border-left-color: #d9a400; } }
   .disclaimer b { font-weight: 700; }
   .disclaimer .ttl { display: block; margin-bottom: 4px; }
+  .wind { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .compass { width: 130px; height: 130px; flex-shrink: 0; }
+  .compass .ring { fill: none; stroke: var(--border); stroke-width: 2; }
+  .compass .tick { fill: var(--muted); font-size: 11px; font-family: system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; }
+  .compass .arrow { fill: #3b82f6; transition: transform .5s; }
+  .wind-stats { flex: 1; min-width: 220px; }
+  .wind-stats .big { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+  .wind-stats .big small { font-size: .85rem; font-weight: 400; color: var(--muted); }
+  .wind-stats .row { margin-top: 8px; font-size: .9rem; }
+  .wind-stats .row span { color: var(--muted); }
+  .wind-stats .hint { margin-top: 10px; font-size: .78rem; color: var(--muted); line-height: 1.5; }
+  .station { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .station .info { flex: 1; min-width: 240px; }
+  .station h3 { margin-bottom: 6px; }
+  .station p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
+  .station .note { font-size: .76rem; margin-top: 6px; }
+  .btn-link { display: inline-block; background: #1d6fd1; color: #fff; text-decoration: none; border-radius: 8px; padding: 10px 16px; font-size: .88rem; font-weight: 600; white-space: nowrap; }
+  .btn-link:hover { background: #1859a8; }
   .err { background: #fdecea; color: #8a1f17; border: 1px solid #f5c2bd; border-radius: 10px; padding: 12px; margin-bottom: 14px; display: none; font-size: .9rem; }
   footer { color: var(--muted); font-size: .76rem; text-align: center; margin-top: 20px; line-height: 1.6; }
 </style>
@@ -83,6 +101,38 @@
   </div>
 
   <div class="card">
+    <h3>Angin saat ini</h3>
+    <div class="wind">
+      <svg class="compass" viewBox="0 0 120 120" role="img" aria-label="Kompas arah angin">
+        <circle class="ring" cx="60" cy="60" r="52"/>
+        <text class="tick" x="60" y="10">U</text>
+        <text class="tick" x="110" y="60">T</text>
+        <text class="tick" x="60" y="110">S</text>
+        <text class="tick" x="10" y="60">B</text>
+        <g id="windArrow" transform="rotate(0 60 60)">
+          <polygon class="arrow" points="60,24 69,64 60,57 51,64"/>
+        </g>
+      </svg>
+      <div class="wind-stats">
+        <div class="big"><span id="windSpeed">–</span> <small>km/jam</small></div>
+        <div class="row"><span>Berasal dari:</span> <b id="windDir">–</b></div>
+        <div class="row"><span>Hembusan maks.:</span> <b id="windGust">–</b></div>
+        <div class="row"><span>Kekuatan:</span> <b id="windLabel">–</b></div>
+        <div class="hint" id="windHint">Panah menunjukkan arah tiupan angin. Udara (termasuk asap) terbawa dari arah asal angin menuju Banda Aceh.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card station">
+    <div class="info">
+      <h3>Stasiun pemantau BMKG: Indrapuri</h3>
+      <p>Pengukuran PM2.5 langsung dari sensor di Indrapuri, Aceh Besar (sekitar 25 km dari Banda Aceh), sebagai pembanding data model di atas. Angka terkini dan grafik riwayat dapat dilihat di situs BMKG.</p>
+      <p class="note">Tautan keluar ke situs BMKG. Situs ini tidak berafiliasi dengan BMKG, dan angka dari stasiun tersebut tidak ditampilkan di sini.</p>
+    </div>
+    <a class="btn-link" href="https://www.bmkg.go.id/kualitas-udara/pm25/pm25_idp2" target="_blank" rel="noopener noreferrer">Lihat data di BMKG ↗</a>
+  </div>
+
+  <div class="card">
     <h3>Tren US AQI (24 jam terakhir)</h3>
     <canvas id="chart"></canvas>
     <div class="legend" style="margin-top:10px" id="legend"></div>
@@ -91,6 +141,7 @@
   <footer>
     Data: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener">Open-Meteo Air Quality API</a>
     (model CAMS) untuk koordinat Banda Aceh. Data bersifat model/perkiraan, bukan hasil stasiun pemantau resmi.<br>
+    Tautan stasiun Indrapuri mengarah ke <a href="https://www.bmkg.go.id/kualitas-udara/pm25/pm25_idp2" target="_blank" rel="noopener noreferrer">halaman resmi BMKG</a>; hak atas data tersebut milik BMKG.<br>
     Proyek pribadi independen, tidak berafiliasi dengan lembaga atau institusi mana pun. Disediakan apa adanya tanpa jaminan akurasi atau ketersediaan.<br>
     Pembaruan otomatis setiap 10 menit.
   </footer>
@@ -199,8 +250,33 @@ function renderChart(hourly, nowIso) {
   }
 }
 
+const WIND_URL = "https://api.open-meteo.com/v1/forecast"
+  + `?latitude=${LAT}&longitude=${LON}&timezone=${encodeURIComponent(TZ)}`
+  + "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh";
+const DIRS = ["Utara", "Timur Laut", "Timur", "Tenggara", "Selatan", "Barat Daya", "Barat", "Barat Laut"];
+const dirName = d => DIRS[Math.round(d / 45) % 8];
+const windLabel = s => s < 12 ? "Lemah" : s < 30 ? "Sedang" : s < 50 ? "Kencang" : "Sangat kencang";
+
+async function loadWind() {
+  try {
+    const res = await fetch(WIND_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const c = (await res.json()).current;
+    const dir = c.wind_direction_10m, spd = c.wind_speed_10m;
+    $("windSpeed").textContent = spd.toFixed(1);
+    $("windDir").textContent = `${dirName(dir)} (${Math.round(dir)}°)`;
+    $("windGust").textContent = c.wind_gusts_10m.toFixed(1) + " km/jam";
+    $("windLabel").textContent = windLabel(spd);
+    // meteorologi: arah = asal angin; panah menunjuk ke arah tiupan (+180°)
+    $("windArrow").setAttribute("transform", `rotate(${(dir + 180) % 360} 60 60)`);
+  } catch (e) {
+    $("windHint").textContent = "Data angin tidak tersedia saat ini.";
+  }
+}
+
 let lastData = null;
 async function load() {
+  loadWind();
   $("refresh").disabled = true;
   try {
     const res = await fetch(URL_API, { cache: "no-store" });
